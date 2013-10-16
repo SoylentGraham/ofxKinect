@@ -42,6 +42,7 @@
     #include <libusb.h>
 #endif
 
+
 class ofxKinectContext;
 
 /// \class ofxKinect
@@ -68,7 +69,7 @@ public:
 	///
 	/// naturally, if you disable the video image the video pixels and
 	/// RGB color will be 0
-	bool init(bool infrared=false, bool video=true, bool texture=true);
+	bool init(bool infrared=false, bool video=true, bool texture=true, bool depth=true);
 
 	/// clear resources, do not call this while ofxKinect is running!
 	void clear();
@@ -341,6 +342,7 @@ private:
 	bool bNeedsUpdate;
 	bool bUpdateTex;
 	bool bGrabVideo;
+	bool bGrabDepth;
 	bool bUseRegistration;
 	bool bNearWhite;
 

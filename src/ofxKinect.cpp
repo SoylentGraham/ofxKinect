@@ -48,6 +48,7 @@ ofxKinect::ofxKinect() {
 	
 	bUseTexture = true;
 	bGrabVideo = true;
+	bGrabDepth = true;
 
 	// set defaults
 	bGrabberInited = false;
@@ -86,7 +87,7 @@ ofxKinect::~ofxKinect() {
 }
 
 //--------------------------------------------------------------------
-bool ofxKinect::init(bool infrared, bool video, bool texture) {
+bool ofxKinect::init(bool infrared, bool video, bool texture, bool depth) {
 	if(isConnected()) {
 		ofLog(OF_LOG_WARNING, "ofxKinect: Do not call init while ofxKinect is running!");
 		return false;
@@ -96,6 +97,7 @@ bool ofxKinect::init(bool infrared, bool video, bool texture) {
 
 	bIsVideoInfrared = infrared;
 	bGrabVideo = video;
+	bGrabDepth = depth;
 	videoBytesPerPixel = infrared?1:3;
 
 	bUseTexture = texture;
@@ -205,7 +207,6 @@ bool ofxKinect::open(string serial) {
 	freenect_set_user(kinectDevice, this);
 	freenect_set_depth_callback(kinectDevice, &grabDepthFrame);
 	freenect_set_video_callback(kinectDevice, &grabVideoFrame);
-	
 	startThread(true, false); // blocking, not verbose
 	
 	return true;
@@ -275,7 +276,8 @@ void ofxKinect::update() {
 
 		this->unlock();
 
-		updateDepthPixels();
+		if ( bGrabDepth )
+			updateDepthPixels();
 	}
 
 	if(bUseTexture) {
@@ -302,7 +304,7 @@ ofVec3f ofxKinect::getWorldCoordinateAt(int x, int y) {
 
 //------------------------------------
 ofVec3f ofxKinect::getWorldCoordinateAt(float cx, float cy, float wz) {
-	double wx, wy;
+	double wx=0, wy=0;
 	freenect_camera_to_world(kinectDevice, cx, cy, wz, &wx, &wy);
 	return ofVec3f(wx, wy, wz);
 }
@@ -633,7 +635,9 @@ void ofxKinect::threadedFunction(){
 
 	ofLog(OF_LOG_VERBOSE, "ofxKinect: Device %d %s connection opened", deviceId, serial.c_str());
 
-	freenect_start_depth(kinectDevice);
+	if ( bGrabDepth ) {
+		freenect_start_depth(kinectDevice);
+	}
 	if(bGrabVideo) {
 		freenect_start_video(kinectDevice);
 	}
@@ -760,7 +764,7 @@ bool ofxKinectContext::open(ofxKinect& kinect, int id) {
 		ofLog(OF_LOG_WARNING, "ofxKinect: Device %d already connected", id);
 		return false;
 	}
-	
+
 	// open and add to vector
 	if(freenect_open_device(kinectContext, &kinect.kinectDevice, id) < 0) {
 		ofLog(OF_LOG_ERROR, "ofxKinect: Could not open device %d", id);
